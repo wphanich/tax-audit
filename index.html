@@ -239,6 +239,7 @@ input[type="date"]::-webkit-calendar-picker-indicator {
     <button class="tab-btn active" id="tabMain" onclick="switchTab('main',this)">📋 บันทึกข้อมูล</button>
     <button class="tab-btn" id="tabReport" onclick="switchTab('report',this)">📊 รายงานทั้งหมด</button>
     <button class="tab-btn" id="tabDone" onclick="switchTab('done',this)">✅ บันทึกงานเสร็จ</button>
+    <button class="tab-btn" id="tabNewJob" onclick="switchTab('newjob',this)">📥 รับงานใหม่</button>
   </div>
 
   <!-- TAB: MAIN -->
@@ -406,6 +407,69 @@ input[type="date"]::-webkit-calendar-picker-indicator {
         <th>ระยะเวลา</th><th>เกณฑ์</th><th>วันที่รับ</th><th>เลขที่หนังสือ</th>
         <th>ผู้สั่งการ</th><th>ส่วน นต</th><th>จัดการ</th>
       </tr></thead><tbody id="mainBody"></tbody></table>
+    </div></div>
+  </div>
+
+  <!-- TAB: NEW JOB (รับงานใหม่) -->
+  <div class="tab-pane" id="tab-newjob">
+    <div class="panel">
+      <div class="panel-hd" onclick="togglePanel('njFormBody')">
+        <h2 id="njFormTitle">📥 รับงานใหม่</h2>
+        <span id="njFormToggle">▼</span>
+      </div>
+      <div class="panel-body" id="njFormBody">
+        <div class="fg"><label>วันที่รับงาน <span style="color:var(--red);">*</span></label><input type="date" id="nj_received_date" onclick="try{this.showPicker()}catch(e){}" style="cursor:pointer;"></div>
+        <div class="fg"><label>ประเภทการตรวจ <span style="color:var(--red);">*</span></label>
+          <select id="nj_audit_type" onchange="onNjAuditTypeChange()">
+            <option value="">-- เลือก --</option>
+            <option>ตรวจแนะนำ</option>
+            <option>หนังสือแนะนำการปฏิบัติหน้าที่ภาษีอากร</option>
+            <option>การวิเคราะห์และตรวจแบบแสดงรายการภาษีเงินได้นิติบุคคล (คืนภาษี) (มก.78)</option>
+            <option>การวิเคราะห์แบบแสดงรายการภาษีเงินได้นิติบุคคล (คืนทันที)</option>
+            <option>การวิเคราะห์และตรวจแบบแสดงรายการภาษีเงินได้นิติบุคคล (มก.78)</option>
+            <option>การตรวจปฏิบัติการเฉพาะประเด็น (คืนภาษี)</option>
+            <option>การตรวจปฏิบัติการเฉพาะประเด็น</option>
+            <option>หมายเรียกฯ</option>
+            <option value="อื่นๆ">อื่นๆ (ระบุเอง)</option>
+          </select>
+        </div>
+        <div class="fg" id="njCustomGroup" style="display:none;"><label>ระบุประเภทการตรวจ</label><input type="text" id="nj_audit_type_custom"></div>
+        <div class="fg"><label>รายชื่อ <span style="color:var(--red);">*</span></label><input type="text" id="nj_name"></div>
+        <div class="fg"><label>เลขประจำตัวผู้เสียภาษี <span style="color:var(--red);">*</span></label><input type="text" id="nj_tin" inputmode="numeric" maxlength="17" placeholder="13 หลัก"></div>
+        <div class="fg" style="grid-column:span 2;"><label>ที่อยู่</label><textarea id="nj_address" rows="2"></textarea></div>
+        <div class="fg"><label>จำนวนเงินคืน</label><input type="number" id="nj_refund_amount" step="0.01" min="0"></div>
+        <div class="fg"><label>ทีม</label>
+          <select id="nj_team">
+            <option value="">-- เลือก --</option>
+            <option>นต061</option><option>นต062</option><option>นต063</option>
+            <option>นต064</option><option>นต065</option><option>นต066</option><option>นต067</option>
+          </select>
+        </div>
+        <div class="fg" style="grid-column:span 2;"><label>หมายเหตุ</label><input type="text" id="nj_remark"></div>
+        <div class="form-actions">
+          <button class="btn btn-outline" onclick="resetNewJobForm()">🔄 ล้างฟอร์ม</button>
+          <button class="btn btn-success" id="btnSaveNewJob" onclick="saveNewJob()">💾 บันทึกรับงาน</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="toolbar">
+      <div class="searchbox"><input type="text" id="njSearch" placeholder="ค้นหา เลขผู้เสียภาษี, ชื่อ, ที่อยู่..." oninput="renderNewJobs()"></div>
+      <select id="njFilterTeam" onchange="renderNewJobs()" style="font-family:inherit;font-size:13px;padding:8px 12px;background:var(--card);color:var(--text);border:1px solid var(--border);border-radius:8px;">
+        <option value="">ทุกทีม</option>
+        <option>นต061</option><option>นต062</option><option>นต063</option>
+        <option>นต064</option><option>นต065</option><option>นต066</option><option>นต067</option>
+      </select>
+      <button class="btn btn-primary btn-sm" onclick="loadNewJobs()">🔄 โหลดใหม่</button>
+    </div>
+    <div id="njSummary" style="padding:0 24px 8px;font-size:13px;color:var(--muted);"></div>
+
+    <div class="tbl-wrap"><div class="tbl-scroll">
+      <table><thead><tr>
+        <th>ลำดับ</th><th>วันที่รับงาน</th><th>ประเภทการตรวจ</th><th>รายชื่อ</th>
+        <th>เลขประจำตัว<br>ผู้เสียภาษี</th><th>ที่อยู่</th><th>จำนวนเงินคืน</th>
+        <th>ทีม</th><th>หมายเหตุ</th><th>จัดการ</th>
+      </tr></thead><tbody id="njBody"></tbody></table>
     </div></div>
   </div>
 
@@ -1026,6 +1090,7 @@ async function loadAll() {
       renderReport();
       updateDoneRefDropdown();
       await loadDone();
+      await loadNewJobs();
       setSyncing('ok');
     } else {
       setSyncing('err');
@@ -1779,7 +1844,7 @@ function togglePanel(bodyId) {
   const el = document.getElementById(bodyId);
   el.classList.toggle('hidden');
   // pick correct toggle icon
-  const togId = bodyId === 'formBody' ? 'formToggle' : bodyId === 'doneFormBody' ? 'doneFormToggle' : 'formToggle';
+  const togId = bodyId === 'formBody' ? 'formToggle' : bodyId === 'doneFormBody' ? 'doneFormToggle' : bodyId === 'njFormBody' ? 'njFormToggle' : 'formToggle';
   const tog = document.getElementById(togId);
   if (tog) tog.textContent = el.classList.contains('hidden') ? '▶' : '▼';
 }
@@ -1792,6 +1857,163 @@ function switchTab(tab, btn) {
   btn.classList.add('active');
   if (tab === 'report') renderReport();
   if (tab === 'done') { updateDoneRefDropdown(); renderDone(); }
+  if (tab === 'newjob') renderNewJobs();
+}
+
+// ===== NEW JOB TAB (รับงานใหม่) =====
+let newJobs = [];
+let njEditId = null;
+
+async function loadNewJobs() {
+  try {
+    const { ok, data } = await sbFetch('/rest/v1/new_jobs?select=*&order=received_date.desc,created_at.desc', 'GET', null, true);
+    if (ok && Array.isArray(data)) {
+      newJobs = data;
+      renderNewJobs();
+    } else {
+      toast('โหลดข้อมูลรับงานใหม่ไม่สำเร็จ: ' + JSON.stringify(data), 'error');
+    }
+  } catch(e) {
+    toast('ข้อผิดพลาด: ' + e.message, 'error');
+  }
+}
+
+function onNjAuditTypeChange() {
+  const isOther = v('nj_audit_type') === 'อื่นๆ';
+  document.getElementById('njCustomGroup').style.display = isOther ? '' : 'none';
+  if (!isOther) set('nj_audit_type_custom', '');
+}
+
+function getNewJobFormData() {
+  const type = v('nj_audit_type');
+  return {
+    received_date: v('nj_received_date') || null,
+    audit_type: type === 'อื่นๆ' ? v('nj_audit_type_custom') : type,
+    name: v('nj_name'),
+    tin: v('nj_tin').replace(/\D/g, ''),
+    address: v('nj_address'),
+    refund_amount: num('nj_refund_amount'),
+    team: v('nj_team'),
+    remark: v('nj_remark')
+  };
+}
+
+function validateNewJob(d) {
+  if (!d.received_date) return 'กรุณาระบุวันที่รับงาน';
+  if (!d.audit_type) return 'กรุณาระบุประเภทการตรวจ';
+  if (!d.name) return 'กรุณากรอกรายชื่อ';
+  if (!d.tin) return 'กรุณากรอกเลขประจำตัวผู้เสียภาษี';
+  if (d.tin.length !== 13) return 'เลขประจำตัวผู้เสียภาษีต้องมี 13 หลัก';
+  if (d.refund_amount !== null && (isNaN(d.refund_amount) || d.refund_amount < 0)) return 'จำนวนเงินคืนไม่ถูกต้อง';
+  return null;
+}
+
+async function saveNewJob() {
+  const d = getNewJobFormData();
+  const err = validateNewJob(d);
+  if (err) { toast(err, 'error'); return; }
+
+  const btn = document.getElementById('btnSaveNewJob');
+  btn.disabled = true;
+  setSyncing('syncing');
+  try {
+    const res = njEditId
+      ? await sbFetch('/rest/v1/new_jobs?id=eq.' + njEditId, 'PATCH', d, true)
+      : await sbFetch('/rest/v1/new_jobs', 'POST', d, true);
+    if (res.ok) {
+      toast(njEditId ? 'แก้ไขงานสำเร็จ' : 'บันทึกรับงานสำเร็จ', 'success');
+      resetNewJobForm();
+      await loadNewJobs();
+      setSyncing('ok');
+    } else {
+      setSyncing('err');
+      toast('ข้อผิดพลาด: ' + JSON.stringify(res.data), 'error');
+    }
+  } catch(e) {
+    setSyncing('err');
+    toast('ข้อผิดพลาด: ' + e.message, 'error');
+  } finally {
+    btn.disabled = false;
+  }
+}
+
+function editNewJob(id) {
+  const r = newJobs.find(x => x.id === id);
+  if (!r) return;
+  njEditId = r.id;
+  set('nj_received_date', r.received_date);
+  const known = r.audit_type && document.querySelector('#nj_audit_type option[value="' + CSS.escape(r.audit_type) + '"]');
+  set('nj_audit_type', !r.audit_type ? '' : known ? r.audit_type : 'อื่นๆ');
+  onNjAuditTypeChange();
+  if (r.audit_type && !known) set('nj_audit_type_custom', r.audit_type);
+  set('nj_name', r.name); set('nj_tin', r.tin); set('nj_address', r.address);
+  set('nj_refund_amount', r.refund_amount); set('nj_team', r.team); set('nj_remark', r.remark);
+  document.getElementById('njFormTitle').textContent = '✏️ แก้ไขงานรับใหม่';
+  const body = document.getElementById('njFormBody');
+  if (body.classList.contains('hidden')) togglePanel('njFormBody');
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+function deleteNewJob(id) {
+  const r = newJobs.find(x => x.id === id);
+  showConfirm('ลบรายการรับงานใหม่', `"${r?.name || r?.tin || ''}"`, async () => {
+    setSyncing('syncing');
+    try {
+      const res = await sbFetch('/rest/v1/new_jobs?id=eq.' + id, 'DELETE', null, true);
+      if (res.ok) {
+        toast('ลบรายการแล้ว', 'info');
+        if (njEditId === id) resetNewJobForm();
+        await loadNewJobs();
+        setSyncing('ok');
+      } else {
+        setSyncing('err');
+        toast('ลบไม่สำเร็จ', 'error');
+      }
+    } catch(e) {
+      setSyncing('err');
+      toast('ข้อผิดพลาด: ' + e.message, 'error');
+    }
+  });
+}
+
+function resetNewJobForm() {
+  ['nj_received_date','nj_audit_type','nj_audit_type_custom','nj_name','nj_tin',
+   'nj_address','nj_refund_amount','nj_team','nj_remark'].forEach(id => set(id, ''));
+  document.getElementById('njCustomGroup').style.display = 'none';
+  njEditId = null;
+  document.getElementById('njFormTitle').textContent = '📥 รับงานใหม่';
+}
+
+function renderNewJobs() {
+  const srch = v('njSearch').toLowerCase();
+  const team = v('njFilterTeam');
+  const rows = newJobs.filter(r => {
+    if (team && r.team !== team) return false;
+    if (srch) return [r.tin, r.name, r.address, r.audit_type].join(' ').toLowerCase().includes(srch);
+    return true;
+  });
+
+  const total = rows.reduce((s, r) => s + (parseFloat(r.refund_amount) || 0), 0);
+  document.getElementById('njSummary').textContent =
+    `ทั้งหมด ${rows.length} ราย · จำนวนเงินคืนรวม ${fn(total) || '0.00'} บาท`;
+
+  document.getElementById('njBody').innerHTML = rows.length === 0
+    ? '<tr><td colspan="10" style="padding:40px;color:var(--dim);text-align:center;">📭 ยังไม่มีงานรับใหม่</td></tr>'
+    : rows.map((r, i) => `<tr>
+      <td>${i+1}</td>
+      <td>${fd(r.received_date)}</td>
+      <td style="text-align:left;" title="${e(r.audit_type)}">${e((r.audit_type||'').substring(0,24))}${(r.audit_type||'').length>24?'…':''}</td>
+      <td style="text-align:left;">${e(r.name)}</td>
+      <td>${e(r.tin)}</td>
+      <td style="text-align:left;max-width:260px;white-space:normal;">${e(r.address)}</td>
+      <td style="text-align:right;">${fn(r.refund_amount)}</td>
+      <td>${e(r.team)}</td>
+      <td style="text-align:left;">${e(r.remark)}</td>
+      <td>
+        <button class="btn btn-primary btn-sm" onclick="editNewJob('${r.id}')">✏️</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteNewJob('${r.id}')">🗑️</button>
+      </td>
+    </tr>`).join('');
 }
 
 // ===== DONE TAB =====
